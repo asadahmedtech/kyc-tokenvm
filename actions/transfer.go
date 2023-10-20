@@ -5,6 +5,7 @@ package actions
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/ava-labs/avalanchego/ids"
 	"github.com/ava-labs/avalanchego/vms/platformvm/warp"
@@ -63,6 +64,28 @@ func (t *Transfer) Execute(
 	_ bool,
 ) (bool, uint64, []byte, *warp.UnsignedMessage, error) {
 	actor := auth.GetActor(rauth)
+	kyc, err := storage.GetAccountKYC(ctx, mu, actor)
+	if err != nil {
+		return false, TransferComputeUnits, utils.ErrBytes(err), nil, nil
+	}
+	d := []byte(fmt.Sprintf("%s:%s:%s:%s:auth", kyc.KYCAuthority, kyc.KYCMetadata, kyc.KYCCountry, kyc.Exists))
+	if !kyc.Exists {
+		return false, TransferComputeUnits, d, nil, nil
+	}
+
+	tokyc, err := storage.GetAccountKYC(ctx, mu, t.To)
+	if err != nil {
+		return false, TransferComputeUnits, utils.ErrBytes(err), nil, nil
+	}
+	tod := []byte(fmt.Sprintf("%s:%s:%s:%s:auth", tokyc.KYCAuthority, tokyc.KYCMetadata, tokyc.KYCCountry, tokyc.Exists))
+	if !tokyc.Exists {
+		return false, TransferComputeUnits, d, nil, nil
+	}
+
+	if kyc.KYCCountry != tokyc.KYCCountry {
+		return false, TransferComputeUnits, tod, nil, nil
+	}
+
 	if t.Value == 0 {
 		return false, TransferComputeUnits, OutputValueZero, nil, nil
 	}

@@ -699,6 +699,7 @@ func GetKYCFromState(
 	values, errs := f(ctx, [][]byte{KYCAccountKey(pk)})
 	kycc, kyca, kycm, exist, err := innerGetAccountKYC(values[0], errs[0])
 	return KYCData{
+		Key:          hex.EncodeToString(KYCAccountKey(pk)),
 		Exists:       exist,
 		KYCCountry:   kycc,
 		KYCAuthority: kyca,

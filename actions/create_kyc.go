@@ -71,6 +71,7 @@ func (c *CreateKYC) Execute(
 
 	var d []byte
 	if kyc, err := storage.GetAccountKYC(ctx, mu, actor); err != nil {
+		err = fmt.Errorf("GetAccountKYC %w", err)
 		return false, CreateKYCComputeUnits, utils.ErrBytes(err), nil, nil
 	} else {
 		d = []byte(fmt.Sprintf("%s:%s:%s:%s:auth", kyc.KYCAuthority, kyc.KYCMetadata, kyc.KYCCountry, kyc.Exists))
