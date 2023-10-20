@@ -611,10 +611,11 @@ func OutgoingWarpKeyPrefix(txID ids.ID) (k []byte) {
 
 // [kycPrefix] + [address]
 func KYCAccountKey(pk ed25519.PublicKey) (k []byte) {
-	k = make([]byte, 1+ed25519.PublicKeyLen)
+	// return []byte("asad")
+	k = make([]byte, 1+ed25519.PublicKeyLen+consts.Uint16Len)
 	k[0] = kycPrefix
 	copy(k[1:], pk[:])
-	// binary.BigEndian.PutUint16(k[1+ed25519.PublicKeyLen:])
+	binary.BigEndian.PutUint16(k[1+ed25519.PublicKeyLen:], KYCMetadataChunks)
 	return
 }
 
@@ -641,7 +642,7 @@ func setAccountKYC(
 	kd := make([]byte, consts.Uint8Len+consts.Uint8Len+KYCMetadataChunks)
 	kd[0] = kycc
 	kd[1] = kyca
-	copy(kd[2:], kycm)
+	copy(kd[2:], kycm[:])
 	return mu.Insert(ctx, key, kd)
 }
 

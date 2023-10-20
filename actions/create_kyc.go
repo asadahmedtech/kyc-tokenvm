@@ -90,8 +90,10 @@ func (c *CreateKYC) Size() int {
 }
 
 func (c *CreateKYC) Marshal(p *codec.Packer) {
-	p.PackInt(int(c.KYCCountry))
-	p.PackInt(int(c.KYCCountry))
+	// p.PackInt(int(c.KYCCountry))
+	// p.PackInt(int(c.KYCCountry))
+	p.PackByte(c.KYCCountry)
+	p.PackByte(c.KYCAuthority)
 	p.PackBytes([]byte(c.KYCMetadata))
 }
 
@@ -100,8 +102,11 @@ func UnmarshalCreateKYC(p *codec.Packer, _ *warp.Message) (chain.Action, error) 
 	fmt.Println("TEst")
 	fmt.Println(string(p.Bytes()))
 
-	create.KYCCountry = uint8(p.UnpackInt(true))
-	create.KYCAuthority = uint8(p.UnpackInt(true))
+	// create.KYCCountry = uint8(p.UnpackInt(true))
+	// create.KYCAuthority = uint8(p.UnpackInt(true))
+
+	create.KYCCountry = uint8(p.UnpackByte())
+	create.KYCAuthority = uint8(p.UnpackByte())
 
 	// var kc, ka []byte
 	// p.UnpackBytes(1, true, &kc)

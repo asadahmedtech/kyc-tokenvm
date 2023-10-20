@@ -7,6 +7,7 @@ package cmd
 import (
 	"context"
 	"errors"
+	"fmt"
 	"time"
 
 	"github.com/ava-labs/avalanchego/ids"
@@ -231,11 +232,6 @@ var mintAssetCmd = &cobra.Command{
 			return err
 		}
 
-		kyc, err := handler.Root().PromptString("kyc", 0, 100)
-		if err != nil {
-			return err
-		}
-
 		// Confirm action
 		cont, err := handler.Root().PromptContinue()
 		if !cont || err != nil {
@@ -247,7 +243,6 @@ var mintAssetCmd = &cobra.Command{
 			Asset: assetID,
 			To:    recipient,
 			Value: amount,
-			KYC:   kyc,
 		}, cli, scli, tcli, factory, true)
 		return err
 	},
@@ -505,17 +500,33 @@ var kycCmd = &cobra.Command{
 			return err
 		}
 
-		// Select token to send
-		kycc, err := handler.Root().PromptInt("kyc country", 5)
+		// Select KYC Country Code
+		for _, c := range actions.KYCCountryList {
+			hutils.Outf(
+				"%d) {{cyan}}country %s{{/}}\n", //nolint:lll
+				c.Code,
+				c.Name,
+			)
+		}
+		kycc, err := handler.Root().PromptInt("kyc country", len(actions.KYCCountryList))
 		if err != nil {
 			return err
 		}
+		// kycc := actions.KYCCountryList[cs-1]
 
-		// Select token to send
-		kyca, err := handler.Root().PromptInt("kyc authority", 3)
+		// Select KYC Authority Code
+		for _, a := range actions.KYCAuthorityList {
+			hutils.Outf(
+				"%d) {{cyan}}authority %s{{/}}\n", //nolint:lll
+				a.Code,
+				a.Name,
+			)
+		}
+		kyca, err := handler.Root().PromptInt("kyc authority", len(actions.KYCAuthorityList))
 		if err != nil {
 			return err
 		}
+		// kyca := actions.KYCAuthorityList[as-1]
 
 		// Select token to send
 		kycm, err := handler.Root().PromptString("kyc metadata", 0, 100)
@@ -529,6 +540,7 @@ var kycCmd = &cobra.Command{
 			return err
 		}
 
+		fmt.Println("Choice", kycc, kyca, string(kycm))
 		// Generate transaction
 		_, _, err = sendAndWait(ctx, nil, &actions.CreateKYC{
 			KYCCheck:     true,

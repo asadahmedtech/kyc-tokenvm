@@ -40,15 +40,34 @@ const (
 )
 
 const (
-	KYCCountryInd uint8 = 0
-	KYCCountrySG  uint8 = 1
-	KYCCountryUS  uint8 = 2
-	KYCCountryUK  uint8 = 3
-	KYCCountryAus uint8 = 4
+	KYCCountryInd uint8 = 1
+	KYCCountrySG  uint8 = 2
+	KYCCountryUS  uint8 = 3
+	KYCCountryUK  uint8 = 4
+	KYCCountryAus uint8 = 5
 )
 
 const (
-	KYCAuthorityIndivual uint8 = 0
-	KYCAuthorityGov      uint8 = 1
-	KYCAuthorityCompany  uint8 = 2
+	KYCAuthorityIndivual uint8 = 1
+	KYCAuthorityGov      uint8 = 2
+	KYCAuthorityCompany  uint8 = 3
 )
+
+type KYCDetails struct {
+	Code uint8  `json:"code"`
+	Name string `json:"name"`
+}
+
+var KYCCountryList = []KYCDetails{
+	KYCDetails{KYCCountryInd, "India"},
+	KYCDetails{KYCCountrySG, "Signapore"},
+	KYCDetails{KYCCountryUS, "USA"},
+	KYCDetails{KYCCountryUK, "UK"},
+	KYCDetails{KYCCountryAus, "Australia"},
+}
+
+var KYCAuthorityList = []KYCDetails{
+	KYCDetails{KYCAuthorityIndivual, "Indivual"},
+	KYCDetails{KYCAuthorityGov, "Government"},
+	KYCDetails{KYCAuthorityCompany, "Company"},
+}

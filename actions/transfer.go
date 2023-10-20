@@ -43,11 +43,12 @@ func (t *Transfer) StateKeys(rauth chain.Auth, _ ids.ID) []string {
 	return []string{
 		string(storage.BalanceKey(auth.GetActor(rauth), t.Asset)),
 		string(storage.BalanceKey(t.To, t.Asset)),
+		string(storage.KYCAccountKey(auth.GetActor(rauth))),
 	}
 }
 
 func (*Transfer) StateKeysMaxChunks() []uint16 {
-	return []uint16{storage.BalanceChunks, storage.BalanceChunks}
+	return []uint16{storage.BalanceChunks, storage.BalanceChunks, storage.KYCChucks}
 }
 
 func (*Transfer) OutputsWarpMessage() bool {

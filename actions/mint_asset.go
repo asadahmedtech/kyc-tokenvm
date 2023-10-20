@@ -32,23 +32,22 @@ type MintAsset struct {
 
 	// Number of assets to mint to [To].
 	Value uint64 `json:"value"`
-
-	KYC string `json:"kyc"`
 }
 
 func (*MintAsset) GetTypeID() uint8 {
 	return mintAssetID
 }
 
-func (m *MintAsset) StateKeys(chain.Auth, ids.ID) []string {
+func (m *MintAsset) StateKeys(rauth chain.Auth, id ids.ID) []string {
 	return []string{
 		string(storage.AssetKey(m.Asset)),
 		string(storage.BalanceKey(m.To, m.Asset)),
+		string(storage.KYCAccountKey(auth.GetActor(rauth))),
 	}
 }
 
 func (*MintAsset) StateKeysMaxChunks() []uint16 {
-	return []uint16{storage.AssetChunks, storage.BalanceChunks}
+	return []uint16{storage.AssetChunks, storage.BalanceChunks, storage.KYCChucks}
 }
 
 func (*MintAsset) OutputsWarpMessage() bool {
@@ -75,7 +74,7 @@ func (m *MintAsset) Execute(
 	}
 
 	if kyc.KYCAuthority != KYCAuthorityGov {
-		return false, MintAssetComputeUnits, d, nil, nil
+		return false, MintAssetComputeUnits, OutputInvalidMintAuthority, nil, nil
 	}
 
 	if m.Asset == ids.Empty {
@@ -122,7 +121,6 @@ func (m *MintAsset) Marshal(p *codec.Packer) {
 	p.PackPublicKey(m.To)
 	p.PackID(m.Asset)
 	p.PackUint64(m.Value)
-	p.PackString(m.KYC)
 }
 
 func UnmarshalMintAsset(p *codec.Packer, _ *warp.Message) (chain.Action, error) {
@@ -130,7 +128,6 @@ func UnmarshalMintAsset(p *codec.Packer, _ *warp.Message) (chain.Action, error) 
 	p.UnpackPublicKey(true, &mint.To) // cannot mint to blackhole
 	p.UnpackID(true, &mint.Asset)     // empty ID is the native asset
 	mint.Value = p.UnpackUint64(true)
-	mint.KYC = p.UnpackString(true) //
 	return &mint, p.Err()
 }
 
