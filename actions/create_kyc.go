@@ -71,9 +71,9 @@ func (c *CreateKYC) Execute(
 		return false, CreateKYCComputeUnits, utils.ErrBytes(err), nil, nil
 	}
 
-	if err := storage.SetAccountAlias(ctx, mu, actor, c.KYCAlias); err != nil {
-		return false, CreateKYCComputeUnits, utils.ErrBytes(err), nil, nil
-	}
+	// if err := storage.SetAccountAlias(ctx, mu, actor, c.KYCAlias); err != nil {
+	// 	return false, CreateKYCComputeUnits, utils.ErrBytes(err), nil, nil
+	// }
 
 	// if kyc, err := storage.GetAccountKYC(ctx, mu, actor); err != nil {
 	// 	err = fmt.Errorf("GetAccountKYC %w", err)
