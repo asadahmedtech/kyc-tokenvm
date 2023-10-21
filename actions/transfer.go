@@ -5,7 +5,6 @@ package actions
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/ava-labs/avalanchego/ids"
 	"github.com/ava-labs/avalanchego/vms/platformvm/warp"
@@ -69,22 +68,22 @@ func (t *Transfer) Execute(
 	if err != nil {
 		return false, TransferComputeUnits, utils.ErrBytes(err), nil, nil
 	}
-	d := []byte(fmt.Sprintf("%s:%s:%s:%s:auth", kyc.KYCAuthority, kyc.KYCMetadata, kyc.KYCCountry, kyc.Exists))
+	// d := []byte(fmt.Sprintf("%s:%s:%s:%s:auth", kyc.KYCAuthority, kyc.KYCMetadata, kyc.KYCCountry, kyc.Exists))
 	if !kyc.Exists {
-		return false, TransferComputeUnits, d, nil, nil
+		return false, TransferComputeUnits, OutputInvalidKYC, nil, nil
 	}
 
 	tokyc, err := storage.GetAccountKYC(ctx, mu, t.To)
 	if err != nil {
 		return false, TransferComputeUnits, utils.ErrBytes(err), nil, nil
 	}
-	tod := []byte(fmt.Sprintf("%s:%s:%s:%s:auth", tokyc.KYCAuthority, tokyc.KYCMetadata, tokyc.KYCCountry, tokyc.Exists))
+	// tod := []byte(fmt.Sprintf("%s:%s:%s:%s:auth", tokyc.KYCAuthority, tokyc.KYCMetadata, tokyc.KYCCountry, tokyc.Exists))
 	if !tokyc.Exists {
-		return false, TransferComputeUnits, d, nil, nil
+		return false, TransferComputeUnits, OutputInvalidKYC, nil, nil
 	}
 
 	if kyc.KYCCountry != tokyc.KYCCountry {
-		return false, TransferComputeUnits, tod, nil, nil
+		return false, TransferComputeUnits, OutputInvalidKYCCountry, nil, nil
 	}
 
 	if t.Value == 0 {

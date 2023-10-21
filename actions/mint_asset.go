@@ -5,7 +5,6 @@ package actions
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/ava-labs/avalanchego/ids"
 	smath "github.com/ava-labs/avalanchego/utils/math"
@@ -68,12 +67,11 @@ func (m *MintAsset) Execute(
 	if err != nil {
 		return false, MintAssetComputeUnits, utils.ErrBytes(err), nil, nil
 	}
-	d := []byte(fmt.Sprintf("%s:%s:%s:%s:auth", kyc.KYCAuthority, kyc.KYCMetadata, kyc.KYCCountry, kyc.Exists))
 	if !kyc.Exists {
-		return false, MintAssetComputeUnits, d, nil, nil
+		return false, MintAssetComputeUnits, OutputInvalidKYC, nil, nil
 	}
 
-	if kyc.KYCAuthority != KYCAuthorityGov {
+	if kyc.KYCAuthority != KYCAuthorityCompany {
 		return false, MintAssetComputeUnits, OutputInvalidMintAuthority, nil, nil
 	}
 
