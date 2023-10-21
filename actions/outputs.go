@@ -42,4 +42,5 @@ var (
 	OutputInvalidKYCCountry        = []byte("invalid kyc cross-border transfer")
 	OutputInvalidKYC               = []byte("invalid or missing kyc for action")
 	OutputKYCCreated               = []byte("valid KYC created")
+	OutputToAddress                = []byte("invalid or missing to address")
 )

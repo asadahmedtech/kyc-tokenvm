@@ -6,4 +6,5 @@ type KYCData struct {
 	KYCCountry   uint8  `json:"kyccountry"`
 	KYCAuthority uint8  `json:"keyauthority"`
 	KYCMetadata  []byte `json:"kycmetadata"`
+	Alias        []byte `json:"alias"`
 }

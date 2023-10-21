@@ -58,6 +58,7 @@ const (
 	incomingWarpPrefix = 0x7
 	outgoingWarpPrefix = 0x8
 	kycPrefix          = 0x9
+	aliasPrefix        = 0x10
 )
 
 const (
@@ -67,6 +68,7 @@ const (
 	LoanChunks        uint16 = 1
 	KYCChucks         uint16 = 1
 	KYCMetadataChunks uint16 = 100
+	KYCAlianChunks    uint16 = 32
 )
 
 var (
@@ -626,9 +628,10 @@ func SetAccountKYC(
 	kycc uint8,
 	kyca uint8,
 	kycm []byte,
+	al []byte,
 ) error {
 	k := KYCAccountKey(pk)
-	return setAccountKYC(ctx, mu, k, kycc, kyca, kycm)
+	return setAccountKYC(ctx, mu, k, kycc, kyca, kycm, al)
 }
 
 func setAccountKYC(
@@ -638,11 +641,13 @@ func setAccountKYC(
 	kycc uint8,
 	kyca uint8,
 	kycm []byte,
+	al []byte,
 ) error {
-	kd := make([]byte, consts.Uint8Len+consts.Uint8Len+KYCMetadataChunks)
+	kd := make([]byte, consts.Uint8Len+consts.Uint8Len+KYCAlianChunks+KYCMetadataChunks)
 	kd[0] = kycc
 	kd[1] = kyca
-	copy(kd[2:], kycm[:])
+	copy(kd[2:2+KYCAlianChunks], al[:])
+	copy(kd[2+KYCAlianChunks:], kycm[:])
 	return mu.Insert(ctx, key, kd)
 }
 
@@ -651,7 +656,7 @@ func GetAccountKYC(
 	im state.Immutable,
 	pk ed25519.PublicKey,
 ) (KYCData, error) {
-	k, kycc, kyca, kycm, exists, err := getAccountKYC(ctx, im, pk)
+	k, kycc, kyca, alias, kycm, exists, err := getAccountKYC(ctx, im, pk)
 	if err != nil {
 		err = fmt.Errorf("%s::%w", hex.EncodeToString(k), err)
 	}
@@ -660,6 +665,7 @@ func GetAccountKYC(
 		KYCCountry:   kycc,
 		KYCAuthority: kyca,
 		KYCMetadata:  kycm,
+		Alias:        alias,
 		Key:          hex.EncodeToString(k),
 	}, err
 }
@@ -668,27 +674,27 @@ func getAccountKYC(
 	ctx context.Context,
 	im state.Immutable,
 	pk ed25519.PublicKey,
-) ([]byte, uint8, uint8, []byte, bool, error) {
+) ([]byte, uint8, uint8, []byte, []byte, bool, error) {
 	k := KYCAccountKey(pk)
-	kycc, kyca, kycm, exists, err := innerGetAccountKYC(im.GetValue(ctx, k))
-	return k, kycc, kyca, kycm, exists, err
+	kycc, kyca, al, kycm, exists, err := innerGetAccountKYC(im.GetValue(ctx, k))
+	return k, kycc, kyca, al, kycm, exists, err
 }
 
 func innerGetAccountKYC(
 	v []byte,
 	err error,
-) (uint8, uint8, []byte, bool, error) {
+) (uint8, uint8, []byte, []byte, bool, error) {
 	if errors.Is(err, database.ErrNotFound) {
-		return 0, 0, nil, false, nil
+		return 0, 0, nil, nil, false, nil
 	}
 	if err != nil {
-		return 0, 0, nil, false, err
+		return 0, 0, nil, nil, false, err
 	}
 	// state := false
 	// if binary.BigEndian.Uint64(v) == 1 {
 	// 	state = true
 	// }
-	return v[0], v[1], v[2:], true, nil
+	return v[0], v[1], v[2 : 2+KYCAlianChunks], v[2+KYCAlianChunks:], true, nil
 }
 
 // Used to serve RPC queries
@@ -698,12 +704,13 @@ func GetKYCFromState(
 	pk ed25519.PublicKey,
 ) (KYCData, error) {
 	values, errs := f(ctx, [][]byte{KYCAccountKey(pk)})
-	kycc, kyca, kycm, exist, err := innerGetAccountKYC(values[0], errs[0])
+	kycc, kyca, al, kycm, exist, err := innerGetAccountKYC(values[0], errs[0])
 	return KYCData{
 		Key:          hex.EncodeToString(KYCAccountKey(pk)),
 		Exists:       exist,
 		KYCCountry:   kycc,
 		KYCAuthority: kyca,
 		KYCMetadata:  kycm,
+		Alias:        al,
 	}, err
 }
