@@ -25,20 +25,22 @@ type CreateKYC struct {
 	KYCCountry   uint8  `json:"kyccountry"`
 	KYCAuthority uint8  `json:"keyauthority"`
 	KYCMetadata  []byte `json:"kycmetadata"`
+	KYCAlias     []byte `json:"kycalias"`
 }
 
 func (*CreateKYC) GetTypeID() uint8 {
 	return createKYCID
 }
 
-func (*CreateKYC) StateKeys(rauth chain.Auth, txID ids.ID) []string {
+func (k *CreateKYC) StateKeys(rauth chain.Auth, txID ids.ID) []string {
 	return []string{
 		string(storage.KYCAccountKey(auth.GetActor(rauth))),
+		string(storage.AliasAccountKey(k.KYCAlias)),
 	}
 }
 
 func (*CreateKYC) StateKeysMaxChunks() []uint16 {
-	return []uint16{storage.KYCChucks}
+	return []uint16{storage.KYCChucks, storage.KYCAlianChunks}
 }
 
 func (*CreateKYC) OutputsWarpMessage() bool {
@@ -65,7 +67,11 @@ func (c *CreateKYC) Execute(
 
 	// It should only be possible to overwrite an existing asset if there is
 	// a hash collision.
-	if err := storage.SetAccountKYC(ctx, mu, actor, c.KYCCountry, c.KYCAuthority, c.KYCMetadata); err != nil {
+	if err := storage.SetAccountKYC(ctx, mu, actor, c.KYCCountry, c.KYCAuthority, c.KYCMetadata, c.KYCAlias); err != nil {
+		return false, CreateKYCComputeUnits, utils.ErrBytes(err), nil, nil
+	}
+
+	if err := storage.SetAccountAlias(ctx, mu, actor, c.KYCAlias); err != nil {
 		return false, CreateKYCComputeUnits, utils.ErrBytes(err), nil, nil
 	}
 
@@ -91,6 +97,7 @@ func (c *CreateKYC) Marshal(p *codec.Packer) {
 	// p.PackInt(int(c.KYCCountry))
 	p.PackByte(c.KYCCountry)
 	p.PackByte(c.KYCAuthority)
+	p.PackBytes([]byte(c.KYCAlias))
 	p.PackBytes([]byte(c.KYCMetadata))
 }
 
@@ -113,9 +120,10 @@ func UnmarshalCreateKYC(p *codec.Packer, _ *warp.Message) (chain.Action, error) 
 	// create.KYCAuthority = ka[0]
 
 	// create.KYCAuthority = p.UnpackByte()
+	p.UnpackBytes(CreateKYCAliasUnits, true, &create.KYCAlias)
 	p.UnpackBytes(CreateKYCComputeUnits, true, &create.KYCMetadata)
 
-	fmt.Println("TEst", create.KYCCountry, create.KYCAuthority, string(create.KYCMetadata))
+	fmt.Println("TEst", create.KYCCountry, create.KYCAuthority, string(create.KYCAlias), string(create.KYCMetadata))
 	return &create, p.Err()
 }
 

@@ -114,6 +114,12 @@ var transferCmd = &cobra.Command{
 			return err
 		}
 
+		// Select user alias
+		recipientalias, err := handler.Root().PromptString("kyc alias", 0, 32)
+		if err != nil {
+			return err
+		}
+
 		// Select amount
 		amount, err := handler.Root().PromptAmount("amount", decimals, balance, nil)
 		if err != nil {
@@ -128,9 +134,10 @@ var transferCmd = &cobra.Command{
 
 		// Generate transaction
 		_, _, err = sendAndWait(ctx, nil, &actions.Transfer{
-			To:    recipient,
-			Asset: assetID,
-			Value: amount,
+			To:      recipient,
+			ToAlias: []byte(recipientalias),
+			Asset:   assetID,
+			Value:   amount,
 		}, cli, scli, tcli, factory, true)
 		return err
 	},
@@ -528,6 +535,12 @@ var kycCmd = &cobra.Command{
 		}
 		// kyca := actions.KYCAuthorityList[as-1]
 
+		// Select user alias
+		alias, err := handler.Root().PromptString("kyc alias", 0, 32)
+		if err != nil {
+			return err
+		}
+
 		// Select token to send
 		kycm, err := handler.Root().PromptString("kyc metadata", 0, 100)
 		if err != nil {
@@ -540,12 +553,13 @@ var kycCmd = &cobra.Command{
 			return err
 		}
 
-		fmt.Println("Choice", kycc, kyca, string(kycm))
+		fmt.Println("Choice", kycc, kyca, string(alias), string(kycm))
 		// Generate transaction
 		_, _, err = sendAndWait(ctx, nil, &actions.CreateKYC{
 			KYCCheck:     true,
 			KYCCountry:   uint8(kycc),
 			KYCAuthority: uint8(kyca),
+			KYCAlias:     []byte(alias),
 			KYCMetadata:  []byte(kycm),
 		}, cli, scli, tcli, factory, true)
 		return err

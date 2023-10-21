@@ -37,6 +37,7 @@ const (
 
 	MaxKYCSize            = 5
 	CreateKYCComputeUnits = 20
+	CreateKYCAliasUnits   = 32
 )
 
 const (

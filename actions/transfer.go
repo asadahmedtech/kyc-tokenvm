@@ -24,6 +24,8 @@ type Transfer struct {
 	// To is the recipient of the [Value].
 	To ed25519.PublicKey `json:"to"`
 
+	ToAlias []byte `json:"to_alias"`
+
 	// Asset to transfer to [To].
 	Asset ids.ID `json:"asset"`
 
@@ -43,11 +45,12 @@ func (t *Transfer) StateKeys(rauth chain.Auth, _ ids.ID) []string {
 		string(storage.BalanceKey(auth.GetActor(rauth), t.Asset)),
 		string(storage.BalanceKey(t.To, t.Asset)),
 		string(storage.KYCAccountKey(auth.GetActor(rauth))),
+		string(storage.AliasAccountKey(t.ToAlias)),
 	}
 }
 
 func (*Transfer) StateKeysMaxChunks() []uint16 {
-	return []uint16{storage.BalanceChunks, storage.BalanceChunks, storage.KYCChucks}
+	return []uint16{storage.BalanceChunks, storage.BalanceChunks, storage.KYCChucks, storage.KYCAlianChunks}
 }
 
 func (*Transfer) OutputsWarpMessage() bool {
@@ -71,6 +74,17 @@ func (t *Transfer) Execute(
 	// d := []byte(fmt.Sprintf("%s:%s:%s:%s:auth", kyc.KYCAuthority, kyc.KYCMetadata, kyc.KYCCountry, kyc.Exists))
 	if !kyc.Exists {
 		return false, TransferComputeUnits, OutputInvalidKYC, nil, nil
+	}
+
+	if len(t.ToAlias) > 0 {
+		t.To, err = storage.GetAccountAlias(ctx, mu, t.ToAlias)
+		if err != nil {
+			return false, TransferComputeUnits, utils.ErrBytes(err), nil, nil
+		}
+	}
+
+	if t.To == ed25519.EmptyPublicKey {
+		return false, TransferComputeUnits, OutputToAddress, nil, nil
 	}
 
 	tokyc, err := storage.GetAccountKYC(ctx, mu, t.To)
@@ -113,6 +127,7 @@ func (t *Transfer) Size() int {
 
 func (t *Transfer) Marshal(p *codec.Packer) {
 	p.PackPublicKey(t.To)
+	p.PackBytes(t.ToAlias)
 	p.PackID(t.Asset)
 	p.PackUint64(t.Value)
 	p.PackBytes(t.Memo)
@@ -120,8 +135,9 @@ func (t *Transfer) Marshal(p *codec.Packer) {
 
 func UnmarshalTransfer(p *codec.Packer, _ *warp.Message) (chain.Action, error) {
 	var transfer Transfer
-	p.UnpackPublicKey(false, &transfer.To) // can transfer to blackhole
-	p.UnpackID(false, &transfer.Asset)     // empty ID is the native asset
+	p.UnpackPublicKey(false, &transfer.To)                               // can transfer using alias
+	p.UnpackBytes(int(storage.KYCAlianChunks), false, &transfer.ToAlias) // can transfer using public key
+	p.UnpackID(false, &transfer.Asset)                                   // empty ID is the native asset
 	transfer.Value = p.UnpackUint64(true)
 	p.UnpackBytes(MaxMemoSize, false, &transfer.Memo)
 	return &transfer, p.Err()
